@@ -19,6 +19,13 @@
 npm install
 ```
 
+## Environment Variables
+
+```sh
+MONGODB_URI=
+JWT_SECRET_KEY=
+```
+
 ## Usage
 
 ```sh
@@ -35,11 +42,13 @@ npm run test
 
 👤 **Oladele tobi**
 
-* Github: [@towbee98](https://github.com/towbee98)
+- Github: [@towbee98](https://github.com/towbee98)
 
 ## Show your support
 
 Give a ⭐️ if this project helped you!
 
-***
-_This README was generated with ❤️ by [readme-md-generator](https://github.com/kefranabg/readme-md-generator)_
+---
+
+_This README was generated with ❤️ by
+[readme-md-generator](https://github.com/kefranabg/readme-md-generator)_
