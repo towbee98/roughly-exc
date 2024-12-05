@@ -60,7 +60,7 @@ type User{
 }
 
 type Query{
-    packages: [Package]
+    packages(expirationDate: String): [Package]
     users: [User]
     package(id:ObjectId!): Package
 }
@@ -76,8 +76,13 @@ type Mutation{
 
 export const resolvers = {
 	Query: {
-		packages: async () => {
-			return await Package.find({}).populate("createdBy");
+		packages: async (_, { expirationDate }) => {
+			const filter = {};
+
+			if (expirationDate) {
+				filter.expirationDate = { $gte: new Date(expirationDate) }; // Fetch packages expiring on or after the specified date
+			}
+			return await Package.find(filter).populate("createdBy");
 		},
 		users: async () => {
 			const users = await User.find();
@@ -109,9 +114,6 @@ export const resolvers = {
 	User: {
 		packages: async (parent, { id }) => {
 			const packages = await Package.find({ createdBy: parent.id });
-			if (!packages) {
-				throw new Error("Packages not found");
-			}
 			return packages;
 		},
 	},
