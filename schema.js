@@ -7,6 +7,7 @@ import throwCustomError, { ErrorTypes } from "./helpers/errorHandler.js";
 import jwt from "jsonwebtoken";
 export const typeDefs = `#graphql 
 scalar DateTime
+scalar ObjectId
 
 input SignupInput {
     email: String!
@@ -31,7 +32,7 @@ input SignupInput {
   }
 
   type UserWithToken {
-    _id: String
+    _id: ObjectId
     email: String
     name: String
     createdAt: DateTime
@@ -41,7 +42,7 @@ input SignupInput {
 
 
 type Package{
-    id:ID
+    id:ObjectId
     name: String!
     description: String!
     price: Float!
@@ -51,7 +52,7 @@ type Package{
 }
 
 type User{
-    id:ID
+    id:ObjectId
     name: String!
     email: String!
     password: String!
@@ -61,14 +62,13 @@ type User{
 type Query{
     packages: [Package]
     users: [User]
-    package(id:ID!): Package
+    package(id:ObjectId!): Package
 }
 
 type Mutation{
-    deletePackage(id:ID!):[Package]
+    deletePackage(id:ObjectId!):[Package]
     createPackage(packageInput: PackageInput!): Package
-    editPackage(id: ID!, packageInput: PackageInput): Package
-    
+    editPackage(id: ObjectId!, packageInput: PackageInput): Package
     login(input: LoginInput!): UserWithToken
     signup(input: SignupInput!): UserWithToken
 }
@@ -77,8 +77,7 @@ type Mutation{
 export const resolvers = {
 	Query: {
 		packages: async () => {
-			const packages = await Package.find();
-			return packages;
+			return await Package.find({}).populate("createdBy");
 		},
 		users: async () => {
 			const users = await User.find();
@@ -99,9 +98,6 @@ export const resolvers = {
 	},
 	Package: {
 		createdBy: async (parent, { id }) => {
-			if (!Types.ObjectId.isValid(id)) {
-				throw new Error("Invalid ID format");
-			}
 			const user = await User.findById(parent.createdBy);
 			if (!user) {
 				throw new Error("User not found");
@@ -112,9 +108,6 @@ export const resolvers = {
 
 	User: {
 		packages: async (parent, { id }) => {
-			if (!Types.ObjectId.isValid(id)) {
-				throw new Error("Invalid ID format");
-			}
 			const packages = await Package.find({ createdBy: parent.id });
 			if (!packages) {
 				throw new Error("Packages not found");
@@ -128,10 +121,8 @@ export const resolvers = {
 			if (!Types.ObjectId.isValid(id)) {
 				throw new Error("Invalid ID format");
 			}
-			const package_ = await Package.findByIdAndDelete(id);
-			if (!package_) {
-				throw new Error("Package not found");
-			}
+			await Package.findByIdAndDelete(id);
+			const package_ = await Package.find().populate("createdBy");
 			return package_;
 		},
 
@@ -149,13 +140,9 @@ export const resolvers = {
 				createdBy: contextValue.user.id,
 			});
 			console.log(package_);
-			return {
-				name: package_.name,
-				description: package_.description,
-				price: package_.price,
-				expirationDate: package_.expirationDate,
-				createdBy: `${package_.createdBy}`,
-			};
+			const result = await Package.findById(package_._id).populate("createdBy");
+			console.log(result);
+			return result;
 		},
 
 		editPackage: async (
@@ -188,7 +175,7 @@ export const resolvers = {
 			}
 			const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY);
 			return {
-				_id: user._id,
+				id: user._id,
 				email: user.email,
 				name: user.name,
 				createdAt: user.createdAt,
@@ -211,7 +198,7 @@ export const resolvers = {
 			});
 			const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY);
 			return {
-				_id: user._id,
+				id: user._id,
 				email: user.email,
 				name: user.name,
 				createdAt: user.createdAt,
